@@ -20,15 +20,13 @@ buffer = []
 acks = []
 
 def simulator_sensors(size, sleep_time = 1):
-        """
-        generates sensor data indefinatley
+    """
+    generates sensor data indefinatley
 
-        :size: size of the sensor data
-        :sleep_time: sleep time before generating the next sensor data
+    :size: size of the sensor data
+    :sleep_time: sleep time before generating the next sensor data
 
-        """ 
-
-
+    """ 
     while(True):
         temperature = np.random.uniform(10, 40, size)  # Simulated temperature in Celsius
         humidity = np.random.uniform(20, 70, size)     # Simulated humidity in relative humidity
