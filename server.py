@@ -104,7 +104,7 @@ poll.register(recv_socket, zmq.POLLIN)
 buffer_max_size = 100
 buffer = []
 acks = []
-TIMEOUT = 2
+TIMEOUT = 10
 
 
 while True:

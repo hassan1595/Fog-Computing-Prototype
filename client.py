@@ -32,7 +32,7 @@ def sender_thread(size, sleep_time):
 
     HOST = "34.107.5.115"  # The server's IP address
     PORT_1 = 4000 # The port used by the server
-    TIMEOUT = 2 # Time out in seconds before a messeage is retransmitted
+    TIMEOUT = 10 # Time out in seconds before a messeage is retransmitted
 
     buffer_max_size = 100
     buffer = []
