@@ -1,4 +1,4 @@
-# Fog-Computing-Project
+# Fog-Computing-Prototype
 Prototyping Assignment in the Fog Computing course
 
 ## Scripts and Dependencies
