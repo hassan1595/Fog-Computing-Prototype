@@ -17,10 +17,10 @@ sleep_time = 0.5 # sleep time of the server before the next message poll
 
 
 context = zmq.Context()
-recv_socket = context.socket(zmq.ROUTER)
-recv_socket.bind("tcp://{}:{}".format(HOST, PORT))
+server_socket = context.socket(zmq.ROUTER)
+server_socket.bind("tcp://{}:{}".format(HOST, PORT))
 poll = zmq.Poller()
-poll.register(recv_socket, zmq.POLLIN)
+poll.register(server_socket, zmq.POLLIN)
 
 # buffer to store sent messages in case of retransmission
 buffer = []
@@ -32,49 +32,57 @@ while True:
     
     #  polls to check received messages
     sockets = dict(poll.poll(1000))
-    if recv_socket in sockets:
-        if sockets[recv_socket] == zmq.POLLIN:
-            _id = recv_socket.recv()
-            obj_b = recv_socket.recv()
+    if server_socket in sockets:
+        if sockets[server_socket] == zmq.POLLIN:
+            _id = server_socket.recv()
+            obj_b = server_socket.recv()
             obj = pk.loads(obj_b)
 
             # client sent data
             if "data" in obj:
-                ack_obj_b = pk.dumps({"ack" : obj["id"]})
+
+                print(f'\nrecieved data from client {_id}\n')
+
+                # add result to buffer in case of retransmission
+                buffer.append({"id" : obj["id"], "data": obj["data"], "socket_id": _id})
+                acks.append({"id" : obj["id"], "time": time.time()})
 
                 # sent ack to client
-                recv_socket.send(_id, zmq.SNDMORE)
-                recv_socket.send(ack_obj_b)
+                ack_obj_b = pk.dumps({"ack" : obj["id"]})                
+                server_socket.send(_id, zmq.SNDMORE)
+                server_socket.send(ack_obj_b)
+
 
                 # apply pca to data
                 pca = PCA(obj["data"])
                 result = pca.project(obj["data"],2)
                 result_b = pk.dumps({"id": obj["id"], "result": result, "pca": pca.U[:,:2].T})
 
-                # add result to buffer in case of retransmission
-                buffer.append({"id" : obj["id"], "result": result_b})
-                acks.append({"id" : obj["id"], "time": time.time()})
-
-
-                recv_socket.send(_id, zmq.SNDMORE)
-                recv_socket.send(result_b)
+                # send result to client
+                server_socket.send(_id, zmq.SNDMORE)
+                server_socket.send(result_b)
+                print(f'\nsent result to client {_id}\n')
 
             # client sent ack to state they received a result
             elif "ack" in obj:
-                print(f'got ack of id {obj["ack"]}')
+                print(f'\ngot ack of id {obj["ack"]} from client {_id}\n')
 
                 # delete result from buffer because client already received it
                 acks = [ack for ack in acks if ack["id"] != obj["ack"]]
                 buffer = [elem for elem in buffer if elem["id"] != obj["ack"]]
 
 
-            print("sent")
-
     # check for time out of the latest message and retranssmit if necessary  
     if len(acks):
         if  time.time() - acks[0]["time"]  > TIMEOUT:
-            recv_socket.send(_id, zmq.SNDMORE)
-            recv_socket.send(buffer[0]["result"])
+
+            print("\ntime out happened\n")
+            pca = PCA(buffer[0]["data"])
+            result = pca.project(buffer[0]["data"],2)
+            result_b = pk.dumps({"id": buffer[0]["id"], "result": result, "pca": pca.U[:,:2].T})
+            server_socket.send(buffer[0]["socket_id"], zmq.SNDMORE)
+            server_socket.send(result_b)
+            print(f'\nretranssmited data to client {buffer[0]["socket_id"]}')
 
             
     time.sleep(sleep_time)

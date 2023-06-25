@@ -34,6 +34,7 @@ def simulator_sensors(size, sleep_time = 1):
         wind = np.random.uniform(10, 150, size)     # Simulated wind speed in km/h
         pressure = np.random.uniform(80, 150, size) # Simulated pressure in Pa
         yield np.array([temperature, humidity, wind, pressure]).T
+        print(f'\ngenerated {size} sensor data\n')
         time.sleep(sleep_time)
 
 
@@ -46,11 +47,10 @@ os.makedirs("plots")
 
 
 context = zmq.Context()
-send_socket = context.socket(zmq.DEALER)
-send_socket.connect("tcp://{}:{}".format(HOST, PORT))
+client_socket = context.socket(zmq.DEALER)
+client_socket.connect("tcp://{}:{}".format(HOST, PORT))
 poll = zmq.Poller()
-poll.register(send_socket, zmq.POLLIN)
-
+poll.register(client_socket, zmq.POLLIN)
 counter = 0
 
 
@@ -71,21 +71,21 @@ for data in simulator_sensors(size, sleep_time):
 
 
     # sent data with its id to server
-    send_socket.send(full_data_b)
-    print(f'send data of id {counter}')
+    client_socket.send(full_data_b)
+    print(f'\nsent data of id {counter}\n')
     counter = (counter +1) % buffer_max_size
 
 
     # polls to check received messages
     sockets = dict(poll.poll(1000))
-    if send_socket in sockets:
-        if sockets[send_socket] == zmq.POLLIN:
-            obj_b = send_socket.recv()
+    if client_socket in sockets:
+        if sockets[client_socket] == zmq.POLLIN:
+            obj_b = client_socket.recv()
             obj = pk.loads(obj_b)
 
             # server sent ack to state they received data.
             if "ack" in obj:
-                print(f'got ack of id {obj["ack"]}')
+                print(f'\ngot ack of id {obj["ack"]}\n')
 
                 # delete data from buffer because server already received it
                 acks = [ack for ack in acks if ack["id"] != obj["ack"]]
@@ -93,27 +93,25 @@ for data in simulator_sensors(size, sleep_time):
 
             # server sent result
             elif "result" in obj:
-                print(f'got result of id {obj["id"]}')
+                print(f'\ngot result of id {obj["id"]}\n')
                 # sent ack to server
-                send_socket.send(pk.dumps({"ack" : obj["id"]}))
+                client_socket.send(pk.dumps({"ack" : obj["id"]}))
 
                 # plots result and save it
                 fig, ax = plt.subplots()
-
                 ax.scatter(*obj["result"].T, c = "red")
                 ax.set_title("Dimentionality reduction using PCA", fontsize = 17)
-
                 ax.set_xlabel(f'{obj["pca"][0][0]:.2f}*temperature + {obj["pca"][0][1]:.2f}*humidity + {obj["pca"][0][2]:.2f}*wind + {obj["pca"][0][3]:.2f}*pressure', fontsize = 10)
                 ax.set_ylabel(f'{obj["pca"][1][0]:.2f}*temperature + {obj["pca"][1][1]:.2f}*humidity + {obj["pca"][1][2]:.2f}*wind + {obj["pca"][1][3]:.2f}*pressure', fontsize = 10)
                 ax.grid()
                 fig.savefig(f'plots/plot_{obj["id"]}.png')
 
 
-    # check for time out of the latest message and retranssmit if necessary             
+    # check for time out of the latest message and retransmit if necessary             
     if len(acks):
         if  time.time() - acks[0]["time"]   > TIMEOUT:
-            print(f'send data of id {buffer[0]["id"]}')
-            send_socket.send(buffer[0]["data"])
+            print(f'\nsend data of id {buffer[0]["id"]}\n')
+            client_socket.send(buffer[0]["data"])
 
 
 
