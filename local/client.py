@@ -113,7 +113,7 @@ for data in simulator_sensors(size, sleep_time):
     # check for time out of the latest message and retransmit if necessary             
     if len(acks):
         if  time.time() - acks[0]["time"]   > TIMEOUT:
-            print(f'\nsend data of id {buffer[0]["id"]}\n')
+            print(f'\nretranssmited result with id  {buffer[0]["id"]}\n')
             client_socket.send(buffer[0]["data"])
 
 

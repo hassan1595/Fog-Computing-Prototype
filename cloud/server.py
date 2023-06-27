@@ -81,7 +81,7 @@ while True:
             result_b = pk.dumps({"id": buffer[0]["id"], "result": result, "pca": pca.U[:,:2].T})
             server_socket.send(buffer[0]["socket_id"], zmq.SNDMORE)
             server_socket.send(result_b)
-            print(f'\nretranssmited data to client {buffer[0]["socket_id"]}')
+            print(f'\nretranssmited result with id {buffer[0]["id"]}to client {buffer[0]["socket_id"]}')
 
             
     time.sleep(sleep_time)
