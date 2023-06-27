@@ -40,7 +40,7 @@ while True:
             # client sent data
             if "data" in obj:
 
-                print(f'\nrecieved data from client {_id}\n')
+                print(f'\nrecieved data with id {obj["id"]} from client {_id}\n')
 
                 # add result to buffer in case of retransmission
                 buffer.append({"id" : obj["id"], "data": obj["data"], "socket_id": _id})
@@ -60,7 +60,7 @@ while True:
                 # send result to client
                 server_socket.send(_id, zmq.SNDMORE)
                 server_socket.send(result_b)
-                print(f'\nsent result to client {_id}\n')
+                print(f'\nsent result with id {obj["id"]} to client {_id}\n')
 
             # client sent ack to state they received a result
             elif "ack" in obj:
@@ -81,9 +81,12 @@ while True:
             result_b = pk.dumps({"id": buffer[0]["id"], "result": result, "pca": pca.U[:,:2].T})
             server_socket.send(buffer[0]["socket_id"], zmq.SNDMORE)
             server_socket.send(result_b)
-            print(f'\nretranssmited result with id {buffer[0]["id"]}to client {buffer[0]["socket_id"]}')
+            print(f'\nretranssmited result with id {buffer[0]["id"]} to client {buffer[0]["socket_id"]}')
+            ack = acks.pop(0)
+            ack["time"] = time.time()
+            acks.append(ack)
+            buffer.append(buffer.pop(0))
 
-            
     time.sleep(sleep_time)
 
 
