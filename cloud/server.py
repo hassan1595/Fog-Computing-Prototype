@@ -9,11 +9,16 @@ from lib.pca import PCA
 
 
 # parameters
-buffer_max_size = 100 # maximum buffer size to store messages that not yet received by other components
-TIMEOUT = 10 # Time out in seconds before a messeage is retransmitted
 HOST = "0.0.0.0" # accepts connections from all clients
 PORT = 4000  # The port used by the server
+TIMEOUT = 10 # Time out in seconds before a messeage is retransmitted
+buffer_max_size = 100 # maximum buffer size to store messages that not yet received by other components
 sleep_time = 0.5 # sleep time of the server before the next message poll
+
+# buffer to store sent messages in case of retransmission
+buffer = []
+# store the awaited id of the acknowledgments
+acks = []
 
 
 context = zmq.Context()
@@ -21,12 +26,6 @@ server_socket = context.socket(zmq.ROUTER)
 server_socket.bind("tcp://{}:{}".format(HOST, PORT))
 poll = zmq.Poller()
 poll.register(server_socket, zmq.POLLIN)
-
-# buffer to store sent messages in case of retransmission
-buffer = []
-# store the awaited id of the acknowledgments
-acks = []
-
 
 while True:
     

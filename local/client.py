@@ -34,7 +34,7 @@ def simulator_sensors(size, sleep_time = 1):
         wind = np.random.uniform(10, 150, size)     # Simulated wind speed in km/h
         pressure = np.random.uniform(80, 150, size) # Simulated pressure in Pa
         yield np.array([temperature, humidity, wind, pressure]).T
-        print(f'\ngenerated {size} sensor data\n')
+        print(f'\ngenerated {size} sensor data for temperature, humidity, wind and pressure\n')
         time.sleep(sleep_time)
 
 
@@ -61,6 +61,7 @@ for data in simulator_sensors(size, sleep_time):
     data_preprocessed = (data - data.mean(axis = 0))/data.std(axis = 0)
     full_data = {"id": counter , "data" : data_preprocessed}
     full_data_b = pk.dumps(full_data)
+    # save in buffer
     buffer.append({"id": counter, "data":full_data_b})
     acks.append({"id" : counter, "time": time.time() })
 
@@ -101,8 +102,10 @@ for data in simulator_sensors(size, sleep_time):
                 fig, ax = plt.subplots()
                 ax.scatter(*obj["result"].T, c = "red")
                 ax.set_title("Dimentionality reduction using PCA", fontsize = 17)
-                ax.set_xlabel(f'{obj["pca"][0][0]:.2f}*temperature + {obj["pca"][0][1]:.2f}*humidity + {obj["pca"][0][2]:.2f}*wind + {obj["pca"][0][3]:.2f}*pressure', fontsize = 10)
-                ax.set_ylabel(f'{obj["pca"][1][0]:.2f}*temperature + {obj["pca"][1][1]:.2f}*humidity + {obj["pca"][1][2]:.2f}*wind + {obj["pca"][1][3]:.2f}*pressure', fontsize = 10)
+                ax.set_xlabel(f'{obj["pca"][0][0]:.2f}*temperature + {obj["pca"][0][1]:.2f}*humidity + \
+                    {obj["pca"][0][2]:.2f}*wind + {obj["pca"][0][3]:.2f}*pressure', fontsize = 10)
+                ax.set_ylabel(f'{obj["pca"][1][0]:.2f}*temperature + {obj["pca"][1][1]:.2f}*humidity + \
+                    {obj["pca"][1][2]:.2f}*wind + {obj["pca"][1][3]:.2f}*pressure', fontsize = 10)
                 ax.grid()
                 fig.savefig(f'plots/plot_{obj["id"]}.png')
 
