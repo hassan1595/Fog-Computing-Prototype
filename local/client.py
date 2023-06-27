@@ -108,6 +108,7 @@ for data in simulator_sensors(size, sleep_time):
                     {obj["pca"][1][2]:.2f}*wind + {obj["pca"][1][3]:.2f}*pressure', fontsize = 10)
                 ax.grid()
                 fig.savefig(f'plots/plot_{obj["id"]}.png')
+                plt.close()
 
 
     # check for time out of the latest message and retransmit if necessary             
